@@ -1,24 +1,26 @@
 
+# run this first
+
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) 
 getwd() # working directory set to folder of .R file
 
 #rm(list=ls())  #clear global environment of stuff from previous sessions
 
+if (!require("pacman")) {
+  install.packages("pacman")
+}
+
+pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sqldf, data.table, metafor, RoBMA)
+
+
+
 ###########################################################################
 # Toxicity: standardizing measured effects, calculating toxicity indicator
 ###########################################################################
 
-pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sqldf, data.table, metafor, RoBMA)
-
 df <- openxlsx::read.xlsx("tables/data_table_HFLF_5.xlsx", sheet = 1, na.strings = "NA") 
 
 names(df)
-
-
-# Backtransform percent changes from more precise ROM values derived with "metacont" from extracted plot values
-df <- mutate(df, Percent.change.vs.control = Ratio_of_means - 1)
-df$Percent.change.vs.control <- percent(df$Percent.change.vs.control)
-
 
 # Normalization of log_ROM to compare "increased ovarian apoptosis" with decreased reproductive capacity
 # in general, we want all uncertain and detrimental bioeffects to be counted as positive, and all beneficial effects as negative
@@ -31,9 +33,10 @@ df <- mutate(df, log_ROM = if_else ( EMF_source != "Base station" | Bioeffect_ca
 # Assignment of negative effect size for all experiments that find beneficial effects
 df <- mutate(df, log_ROM = if_else ( Direction_of_effect == "beneficial", -abs(log_ROM), log_ROM))
 
-
 # Normalization of ROM quotients < 1 to their inverse value (normalized ROM)
 df <- mutate(df, ROM_norm = if_else ( Ratio_of_means< 1, 1/Ratio_of_means, Ratio_of_means))
+# Assignment of negative effect size for all experiments that find beneficial effects
+df <- mutate(df, ROM_norm = if_else ( Direction_of_effect == "beneficial", 1/ROM_norm, ROM_norm))
 df <- relocate(df, ROM_norm, .after = "Ratio_of_means")
 
 
@@ -61,16 +64,16 @@ eff_size <- sqldf("SELECT * FROM df WHERE Ratio_of_means != 'NA'")
 
 length(eff_size$study)/length(df$study)
 length(unique(eff_size$study))/length(unique(df$study))
-# 62.0 % of exp
-# 55.7 % of studies
+# 61.8 % of exp
+# 55.3 % of studies
 
 # percentage of experiments with p values BEFORE assigning p = 0.5 to "no effect" studies
 pval <- sqldf("SELECT * FROM df WHERE p NOT NULL")
 
 length(pval$study)/length(df$study)
 length(unique(pval$study))/length(unique(df$study))
-# 66.0 % of exp
-# 61.5 % of studies
+# 53.6 % of exp
+# 58.7 % of studies
 
 df <- openxlsx::read.xlsx("tables/data_table_HFLF_4.xlsx", sheet = 1, na.strings = "NA")
 
@@ -78,15 +81,15 @@ df <- openxlsx::read.xlsx("tables/data_table_HFLF_4.xlsx", sheet = 1, na.strings
 pval <- sqldf("SELECT * FROM df WHERE p NOT NULL")
 length(pval$study)/length(df$study)
 length(unique(pval$study))/length(unique(df$study))
-# 70.4 % of exp
-# 65.6 % of studies
+# 58.1 % of exp
+# 62.8 % of studies
 
 # percentage of experiments with SE values (amenable to meta-analysis)
 logSE <- sqldf("SELECT * FROM df WHERE log_SE NOT NULL")
 length(logSE$study)/length(df$study)
 length(unique(logSE$study))/length(unique(df$study))
-# 59.1 % of exp
-# 48.3 % of studies
+# 58.9 % of exp
+# 47.9 % of studies
 
 
 ################################################################
@@ -100,6 +103,7 @@ pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sq
 ###########################
 
 df1 <- openxlsx::read.xlsx("tables/HFLF_meta_table.xlsx", sheet = 1, na.strings = "NA") 
+dev.off()
 #View(df1)
 
 # for observational base station studies, set duration to one year (higher than most insects' lifetime)
@@ -118,9 +122,6 @@ df1$EMF_source[grep("Coil", df1$EMF_source)] <- "Coil system"
 df1$EMF_source <- factor(df1$EMF_source, levels=c("Base station","DECT","Mobile phone","Signal generator","WiFi","Coil system"), ordered=TRUE)
 table(df1$EMF_source)
 
-
-# Assignment of negative effect size for all experiments that find beneficial effects
-df1 <- mutate(df1, ROM_norm = if_else ( Direction_of_effect == "beneficial", 1/ROM_norm, ROM_norm))
 df2 <- df1[complete.cases(df1[,"ROM_norm"]),]  # select all rows that have effect size value
 
 # Field parameter plots
@@ -204,7 +205,7 @@ names(df3)
 
 df3 <- df3[complete.cases(df3[,c("E_Field","CummHrs","ROM_norm")]),]  # keep only rows with E-field, duration and effect size 
 df3 <- subset(df3, EMF_source!="Coil system")
-
+#df3 <- subset(df3, EMF_source!="WiFi")
 
 # various formulas to estimate toxicity:
 #df3 <- mutate(df3, tox_norm = ROM_norm/(Power_mWm2)) # effect normalized to power density
@@ -252,6 +253,7 @@ pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sq
 
 df4 <- openxlsx::read.xlsx("SAR_calc.xlsx", sheet = 1, na.strings = "NA")
 #View(df4)
+#df4 <- subset(df4, EMF_source!="WiFi")
 
 df4$Insect_mass_mg <- NA
 # assigning body mass per insect species or type
@@ -289,7 +291,6 @@ df4$SAR <- df4$Energy_uptake_nW_per_mWm2 * df4$Power_mWm2 * 10^-6 / (df4$Insect_
 #df4 <- mutate(df4, SAR = if_else ( is.na(SAR), SAR2, SAR))
 #View(df4[c("study","SAR","SAR2")])
 
-#View(df4)
 
 # keep only experiments that found some toxicity or potential toxicity
 df4 <- subset(df4, Direction_of_effect == "detrimental" | Direction_of_effect == "uncertain")
@@ -315,7 +316,7 @@ length(df4$study) # 182 experiments with specification of B-field, duration and 
 unique(df4$study) # out of 39 studies 
 
 table(df4$EMF_source)
-df4$EMF_source <- factor(df4$EMF_source, levels=c("Base station","DECT","Mobile phone","Signal generator", "WiFi"), ordered=TRUE)
+df4$EMF_source <- factor(df4$EMF_source, levels=c("Base station","DECT","Mobile phone","Signal generator","WiFi"), ordered=TRUE)
 
 r4 <- ggplot(aes(x = EMF_source, y = log10(tox_norm2), col=EMF_source), data = df4) + 
   geom_boxplot() + xlab(NULL)  + theme_classic2() +  scale_y_continuous() + #breaks = NULL
@@ -382,5 +383,12 @@ ggplot(aes(y = log(ROM_norm), x = log(SAR), col=EMF_source), data = df4) +
 
 #ggsave("figures/log_ROM~log_SAR.jpg", width = 8, height = 8)
 #ggsave("figures/log_ROM~log_SAR.png", width = 8, height = 8)
+
+ggplot(aes(y = log(ROM_norm), x = log(Power_mWm2), col=EMF_source), data = df4) + 
+  geom_point() + scale_color_brewer(palette="Set1") + labs(col="Field source")
+
+ggplot(aes(y = log(ROM_norm), x = log(E_Field), col=EMF_source), data = df4) + 
+  geom_point() + scale_color_brewer(palette="Set1") + labs(col="Field source")
+
 
 

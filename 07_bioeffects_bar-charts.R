@@ -1,13 +1,19 @@
 
+# run this first
+
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) 
 getwd() # working directory set to folder of .R file
+
+if (!require("pacman")) {
+  install.packages("pacman")
+}
+
+pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sqldf)
 
 
 ############################################################
 # Standardizing Bioeffects 
 ############################################################
-
-pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sqldf)
 
 df <- openxlsx::read.xlsx("tables/data_table_HFLF_4.xlsx", sheet = 1, na.strings = "NA") 
 df <- relocate(df, experiment_id, .after = "experiment")
@@ -35,6 +41,7 @@ df$Bioeffect_cat[grep("winter survival rate", df$Bioeffects)] <- "Reduced reprod
 df$Bioeffect_cat[grep("survival rate for eggs", df$Bioeffects)] <- "Reduced reproductive capacity"
 df$Bioeffect_cat[grep("decrease in number of eggs", df$Bioeffects)] <- "Reduced reproductive capacity"
 df$Bioeffect_cat[grep("reduced egg laying", df$Bioeffects)] <- "Reduced reproductive capacity"
+df$Bioeffect_cat[grep("Reduced egg laying", df$Bioeffects)] <- "Reduced reproductive capacity"
 df$Bioeffect_cat[grep("Increased mortality", df$Bioeffects)] <- "Reduced reproductive capacity"
 df$Bioeffect_cat[grep("decreased egg to adult viability", df$Bioeffects)] <- "Reduced reproductive capacity"
 df$Bioeffect_cat[grep("Reduced reproductive capacity", df$Bioeffects)] <- "Reduced reproductive capacity"
@@ -135,7 +142,7 @@ df$Bioeffect_cat[grep("Reduced homing rate", df$Bioeffects)] <- "Altered behavio
 df$Bioeffect_cat[grep("Reduced percentage of returning", df$Bioeffects)] <- "Altered behavior"
 df$Bioeffect_cat[grep("Increased percentage of returning", df$Bioeffects)] <- "Altered behavior"
 
-
+df$Bioeffect_cat[grep("Increased egg laying", df$Bioeffects)] <- "Other"
 df$Bioeffect_cat[grep("Increased number of offspring", df$Bioeffects)] <- "Other"
 
 df$Bioeffect_cat[grep("no effect", df$Bioeffects)] <- "No effect"
@@ -178,7 +185,7 @@ names(df)
 
 # to check if assigning of bioeffect category was correctly done
 check_bioeffects <- cbind(old_bioeffects, df$Bioeffect_cat)
-#View(check_bioeffects)
+View(check_bioeffects)
 
 # save expanded table
 openxlsx::write.xlsx(df, "tables/data_table_HFLF_5.xlsx", rowNames = F, colWidths = 15, firstRow = T, firstCol = T)
