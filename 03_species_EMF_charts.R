@@ -7,6 +7,10 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set working direct
 
 dir.create(file.path(getwd(), "tables")) # create subdirectory for data tables
 
+if (!require("pacman")) {
+  install.packages("pacman")
+}
+
 pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx)
 
 
@@ -17,11 +21,19 @@ pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx)
 df1 <- openxlsx::read.xlsx("data_table_HF.xlsx", sheet = 1)
 
 df2 <- openxlsx::read.xlsx("data_table_LF.xlsx", sheet = 1) 
-df2$RFLow <- as.character(df2$RFLow)
+
+str(df1)
+str(df2)
+
+df2$df2df2$RFLow <- as.character(df2$RFLow)
 df2$RFHigh <- as.character(df2$RFHigh)
+df2$RFLow <- as.character(df2$RFLow)
+
 df2$SAR <- as.character(df2$SAR)
 df2$Output_power <- as.character(df2$Output_power)
+df2$Confid <- as.character(df2$Confid)
 df <- full_join(df1,df2)
+#View(df)
 
 # total number of individual studies
 distinct(df, key)
@@ -56,7 +68,7 @@ detach(df)
 control <- df[c("key","CummHrs","CummHrs2")]
 control
 #View(control) # No errors found. Minute -- year fields will be removed later
-# 0 duration is for inventories of insects at base stations, where duration of exposure is unknown
+# 0 duration is for inventories of insects at base stations, where precise duration of exposure is unknown (chronic exposure)
 
 
 ##############################################################
@@ -76,6 +88,7 @@ df2$RFLow <- as.character(df2$RFLow)
 df2$RFHigh <- as.character(df2$RFHigh)
 df2$SAR <- as.character(df2$SAR)
 df2$Output_power <- as.character(df2$Output_power)
+df2$Confid <- as.character(df2$Confid)
 
 df <- full_join(df1,df2)
 
@@ -144,8 +157,11 @@ names(df)
 
 # to remove newly added studies (post publication)
 df <- subset(df, key != "Vilic2024")
-df <- subset(df, key != "Treder2023")
-df <- subset(df, key != "Thill2018")
+#df <- subset(df, key != "Treder2023")
+#df <- subset(df, key != "Thill2018")
+
+# removing Taye2017 study since it uses the same experiment, place and time as Taye2018 (double publication?)
+df <- subset(df, key != "Taye2017")
 
 # saving HFLF table with standardized names
 openxlsx::write.xlsx(df, "tables/data_table_HFLF_1.xlsx", rowNames = F, colWidths = 15, overwrite = T, firstRow = T, firstCol = T)
@@ -183,6 +199,7 @@ amount <- table_insects$n
 labels <- table_insects$Insect_type
 amount <- as.vector(amount)
 pie(amount,labels)
+
 
 ################################################
 # make nicer ggplot pie-chart and bar-chart:

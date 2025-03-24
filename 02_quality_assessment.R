@@ -1,11 +1,14 @@
 
 # run this first!
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-#rm(list=ls())  # clear global environment of stuff from previous sessions
 
-library(pacman)
+#rm(list=ls())  # clear global environment of stuff from previous sessions
+if (!require("pacman")) {
+  install.packages("pacman")
+}
 
 pacman::p_load(dplyr, RefManageR, bibtex, sqldf, stringi, tidyverse, openxlsx)
+
 
 ############################################################
 #  Getting list of studies older than 1980
@@ -25,7 +28,7 @@ df$groups <- gsub("HF, HF_LF_exp", "HF_LF_exp, HF", df$groups)
 df$groups <- gsub("LF, HF_LF_exp", "HF_LF_exp, LF", df$groups)
 table(df$groups)
 
-# using sql semantic to grab all HF studies
+# using SQL semantic to grab all HF studies
 HF = sqldf("SELECT * FROM df WHERE [groups] LIKE 'HF_LF_exp, HF%' ")
 #View(HF)
 HF_list <- HF$Identifier
@@ -41,7 +44,7 @@ LF_list <- as.data.frame(LF_list)
 LF_list
 
 ############################################################
-#  Getting lists of accepted or rejected studies
+#  Getting lists of included or excluded studies
 ############################################################
 
 pacman::p_load(openxlsx, dplyr, sqldf, RefManageR, ggplot2, patchwork, ggpubr)

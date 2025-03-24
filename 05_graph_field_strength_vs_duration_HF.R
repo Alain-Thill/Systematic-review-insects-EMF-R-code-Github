@@ -4,7 +4,10 @@ getwd() # working directory set to folder of .R file
 
 #rm(list=ls())  #clear global environment of stuff from previous sessions
 
-library(pacman)
+if (!require("pacman")) {
+  install.packages("pacman")
+}
+
 pacman::p_load(dplyr, tidyr, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sqldf)
 
 
@@ -211,8 +214,8 @@ mean(df2$E_Field)
 median(df2$E_Field)
 sd(df2$E_Field)
 
-min(df2$CummHrs)*60*60  # in Sekunden
-max(df2$CummHrs)/(24*30) # in Monaten
+min(df2$CummHrs)*60*60  # in seconds
+max(df2$CummHrs)/(24*30) # in months
 
 boxplot(df2$CummHrs)
 mean(df2$CummHrs)
@@ -241,7 +244,7 @@ pulsed <- sqldf("SELECT * FROM signalz WHERE WaveType = 'Pulsed'")
 FM <- sqldf("SELECT * FROM signalz WHERE WaveType = 'Continuous, 50-kHz FM'")
 continuous <- sqldf("SELECT * FROM signalz WHERE WaveType = 'Continuous'")
 
-nrow(pulsed)/nrow(signalz) # percentage experimental groups that used pulsed signal
+nrow(pulsed)/nrow(signalz) # percentage experimental groups that used pulsed signal from signal generator
 nrow(FM)/nrow(signalz) # percentage experimental groups that used FM signal
 1-(nrow(pulsed)/nrow(signalz))-(nrow(FM)/nrow(signalz)) # percentage experimental groups that used continuous signal
 

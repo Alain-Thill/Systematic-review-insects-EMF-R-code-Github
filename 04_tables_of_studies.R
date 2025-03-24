@@ -7,6 +7,10 @@ dir.create(file.path(getwd(), "tables")) # create subfolder for saving tables
 
 #rm(list=ls())  #clear global environment of stuff from previous sessions
 
+if (!require("pacman")) {
+  install.packages("pacman")
+}
+
 pacman::p_load(dplyr, tidyr, gdata, ggplot2, ggpubr, scales, RColorBrewer, sqldf, xtable, stringr)
 
 

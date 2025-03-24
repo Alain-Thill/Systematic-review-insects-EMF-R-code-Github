@@ -1,12 +1,19 @@
 
 # run this first
-install.packages("pacman")
+if (!require("pacman")) {
+  install.packages("pacman")
+}
+pacman::p_load(dplyr, RefManageR, ggplot2, patchwork, ggpubr, rstudioapi)
 
-pacman::p_load(dplyr, RefManageR, ggplot2, patchwork, ggpubr)
+# Getting the path of your current open file
+current_path = rstudioapi::getActiveDocumentContext()$path
+# set working directory to active directory
+setwd(dirname(current_path ))
 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) # set working directory to active directory
+getwd()
 
-dir.create(file.path(getwd(), "figures")) # create subfolder for saving figures
+# create subfolder for saving figures
+dir.create(file.path(getwd(), "figures")) 
 
 
 ##############################################################
