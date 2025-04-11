@@ -63,7 +63,7 @@ gg_forestplot <- function(brm_obj,
 
 ### changing the global settings for package "meta" 
 
-settings.meta("reset")
+#settings.meta("reset")
 settings.meta("RevMan5")
 #settings.meta("print")
 # some additional settings
@@ -111,7 +111,7 @@ mlabfun <- function(text, metaforobj) {
   }
 
 
-# function to make a study-level "bayesmeta" model
+### function to make a study-level "bayesmeta" model
 
 bayesmeta_studylevel <- function(bmr_obj) {
 X_studies <- model.matrix( ~ -1 + study, data = bmr_obj)
@@ -226,7 +226,8 @@ meta::forest(madata1, layout = "Revman5",
        leftcols = c("Author_Year","EMF_source","E_Field","effect","ci","w.random"),
        leftlabs = c("Author, Year","EMF","E-Field [V/m]","Duration [h]"),
        just = "center", just.addcols = "center", xlim = c(0.75,4),
-       text.addline1 = meta_I2_multilevel(madata1))
+       text.addline1 = meta_I2_multilevel(madata1)
+       )
 
 madata1 <- update(madata1, subgroup = study) # show subgroup means
 
@@ -240,7 +241,8 @@ meta::forest(madata1, layout = "RevMan5",
             leftcols = c("Author_Year","EMF_source","E_Field","CummHrs","effect","ci","w.random"),
             leftlabs = c("Author, Year","EMF","E-Field [V/m]","Duration [h]"),
             just = "center", just.addcols = "center", xlim = c(0.75,4),
-            text.addline1 = meta_I2_multilevel(madata1))
+            text.addline1 = meta_I2_multilevel(madata1)
+            )
 
 
 summary(madata1)
@@ -297,10 +299,11 @@ dev.off()
 # funnel plots
 funnel.rma(full.model_high)
 
-res_high <- rma(TE, sei=seTE, data=madata1)
 inf <- influence(res_high)
-plot(res_high)
+plot(inf)
+
 # Regression Test for Funnel Plot Asymmetry
+res_high <- rma(TE, sei=seTE, data=madata1)
 regtest(res_high)
 
 # contour-enhanced funnel plot (credit to Wolfgang Viechtbauer)
@@ -350,7 +353,7 @@ dev.off()
 
 # study-level "bayesmeta" model
 
-#bmr_high_studylevel <- bayesmeta_studylevel(droso_high)
+#bmr_high_studylevel <- bayesmeta_studylevel(droso_high) # one-line version using function defined above
 
 X_h <- model.matrix( ~ -1 + study, data = droso_high)
 X_h
@@ -385,7 +388,7 @@ png(file = "suppl_figures/bayesmeta_study-level_forestplot_repro_tox_over_7Vm.pn
 forestplot(bmr_high_studylevel, expo=TRUE, clip=c(0.5,2.5))
 dev.off()
 
-# # compute p values for effect greater or less than zero
+# # compute p value for effect greater or less than zero
 # prob_detrimental_effect <- pppvalue(bmr_high_studylevel, parameter="mu", value=0, alternative = "greater", n=100)
 # prob_detrimental_effect
 # # p-value = 0.01
@@ -1292,6 +1295,11 @@ dev.off()
 # bmr_2_studylevel$likelihood(mu = 0)
 bmr_2_studylevel$bayesfactor[1, "mu=0"]
 
+# # compute p values for effect greater or less than zero
+p_detrimental_effect_DECT <- pppvalue(bmr_2_studylevel, parameter="mu", value=0, alternative = "greater", n=100)
+p_detrimental_effect_DECT
+
+
 # grab estimates
 brm.est2 <- c(fixef(brm_m2)[1], fixef(brm_m2)[3], fixef(brm_m2)[4])
 brm.est2 <- meta:::backtransf(brm.est2, sm="ROM")
@@ -1429,6 +1437,10 @@ dev.off()
 # bmr_3_studylevel$likelihood(mu = 0)
 # bmr_3_studylevel$pposterior(mu = 0)
 bmr_3_studylevel$bayesfactor[1, "mu=0"]
+
+# # compute p values for effect greater or less than zero
+p_detrimental_effect_mobile <- pppvalue(bmr_3_studylevel, parameter="mu", value=0, alternative = "greater", n=100)
+p_detrimental_effect_mobile
 
 # grab estimates
 brm.est3 <- c(fixef(brm_m3)[1], fixef(brm_m3)[3], fixef(brm_m3)[4])

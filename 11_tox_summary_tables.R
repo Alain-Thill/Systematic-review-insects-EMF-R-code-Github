@@ -1,5 +1,10 @@
 
+# run this first!
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path)) 
+
+if (!require("pacman")) {
+  install.packages("pacman")
+}
 
 pacman::p_load(dplyr, tidyr, gdata, ggplot2, ggpubr, scales, RColorBrewer, openxlsx, sqldf, data.table)
 
@@ -43,6 +48,7 @@ str(min_Efield)
 df_bioeffects <- unique(df[c("study","Bioeffect_cat")])
 df_bioeffects <- aggregate(Bioeffect_cat ~ study, df_bioeffects, paste, collapse=", ")
 #View(df_bioeffects)
+
 df_direct_effect <- unique(df[c("study","Direction_of_effect")])
 df_direct_effect <- aggregate(Direction_of_effect ~ study, df_direct_effect, paste, collapse=", ")
 
@@ -59,14 +65,14 @@ View(df_merge)
 openxlsx::write.xlsx(df_merge, "tables/Bioeffects_HFLF_aggregated.xlsx", rowNames = F, colWidths = "auto", overwrite = T, firstRow = T, firstCol = T)
 
 
-############################################
-# Table bioeffect tox by EMF source
-############################################
+########################################################
+# Table median of all variables grouped by EMF source
+########################################################
 
 df <- openxlsx::read.xlsx("tables/HFLF_meta_table.xlsx", sheet = 1, na.strings = "NA") 
 
 str(df)
-#View(df)
+View(df)
 
 df <- df[grep("HF", df$EMF_type),]
 
@@ -81,7 +87,7 @@ table1
 View(table1)
 
 
-table <- df %>%
+table2 <- df %>%
   group_by(study, EMF_source, Bioeffect_cat) %>% 
   summarise(
     across(where(is.numeric), ~ median(.x, na.rm = TRUE)), 
@@ -89,6 +95,16 @@ table <- df %>%
     n = n(), 
   )
 
-View(table)
+View(table2)
 
 
+
+########################################################################################################
+# code for selecting only the experimental group with strongest measured effect among all exp. groups
+########################################################################################################
+
+DECT <- sqldf("SELECT * FROM df WHERE EMF_source LIKE '%DECT%'")
+DECT <- as.data.table(DECT)
+DECT2 <- DECT[DECT[, .I[log_ROM == max(log_ROM)], by=experiment]$V1]
+View(DECT2)
+length(DECT$study)
